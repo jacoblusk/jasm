@@ -11,6 +11,7 @@ typedef struct tagLEXER {
 
 typedef enum tagTOKEN_TYPE {
 	TOKEN_TYPE_IDENTIFIER,
+	TOKEN_TYPE_INTEGER,
 	TOKEN_TYPE_COMMA
 } TOKEN_TYPE;
 
@@ -37,6 +38,8 @@ void LexerInitialize(
 
 void LexerAdvance(PLEXER pLexer, size_t cBytes); 
 PTOKEN LexerRun(PLEXER pLexer); 
+PTOKEN LexerIdentifier(PLEXER pLexer);
+PTOKEN LexerNumber(PLEXER pLexer); 
 void TokenPrepend(PPTOKEN ppToken, PTOKEN pToken); 
 void TokenReverse(PPTOKEN ppToken);
 

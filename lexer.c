@@ -55,8 +55,10 @@ void TokenReverse(PPTOKEN ppToken) {
 typedef void (*TOKEN_MAP_FN_ROUTINE)(PTOKEN, void *);
 void TokenMapFn(PTOKEN pToken, TOKEN_MAP_FN_ROUTINE pMapFn,
 		void *pUserData) {
-	for(PTOKEN pCurrent = pToken; pCurrent; pCurrent = pCurrent->pNext) {
+	for(PTOKEN pCurrent = pToken; pCurrent; ) {
+		PTOKEN pTemp = pCurrent->pNext;
 		pMapFn(pCurrent, pUserData);
+		pCurrent = pTemp;
 	}
 }
 
@@ -111,10 +113,12 @@ PTOKEN LexerNumber(PLEXER pLexer) {
 		cLexemeLength
 	);
 
-	atoi(
+	int iResult = atoi(pszLexeme);
+	free(pszLexeme);
+
 	PTOKEN pToken = CreateToken(
-		TOKEN_TYPE_IDENTIFIER,
-		(UTOKEN_VALUE) { .pszString = pszLexeme }
+		TOKEN_TYPE_INTEGER,
+		(UTOKEN_VALUE) { .iInteger = iResult }
 	);
 
 	LexerAdvance(pLexer, cLexemeLength);
@@ -139,6 +143,9 @@ PTOKEN LexerRun(PLEXER pLexer) {
 			LexerAdvance(pLexer, 1);
 		} else if(isalpha(c)) {
 			PTOKEN pToken = LexerIdentifier(pLexer);
+			TokenPrepend(&pTokens, pToken);
+		} else if(isdigit(c)) {
+			PTOKEN pToken = LexerNumber(pLexer);
 			TokenPrepend(&pTokens, pToken);
 		}
 	} while(pLexer->cbPosition < pLexer->cbBufferSize);
