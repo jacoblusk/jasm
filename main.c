@@ -1,4 +1,11 @@
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
+#include <crtdbg.h>
+#else
+#include <stdlib.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -50,5 +57,9 @@ int main(int argc, char **argv) {
 	TokenMapFn(pTokens, PrintToken, NULL);
 
 	TokenMapFn(pTokens, DestroyTokens, NULL);
+
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
 	return EXIT_SUCCESS;
 }
