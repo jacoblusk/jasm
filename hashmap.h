@@ -25,18 +25,18 @@ typedef struct tagHASHMAP {
 	void *pFreeFnUserData;
 } HASHMAP, *PHASHMAP;
 
-size_t __HashMapHash(char const *pszKey);
+size_t __HashMap_Hash(char const *pszKey);
 
-HASHMAP_STATUS HashMapInitialize(
+HASHMAP_STATUS HashMap_Initialize(
 	PHASHMAP pHashMap,
 	size_t cInitialCapacity,
 	HASHMAP_FREE_ROUTINE pFreeFn,
 	void *pFreeFnUserData
 );
 
-HASHMAP_STATUS HashMapPut(PHASHMAP pHashMap, char const *pszKey, void *pValue);
-void *HashMapGet(PHASHMAP pHashMap, char const *pszKey);
-void HashMapElementMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData);
-void HashMapDataMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData);
+HASHMAP_STATUS HashMap_Put(PHASHMAP pHashMap, char const *pszKey, void *pValue);
+void *HashMap_Get(PHASHMAP pHashMap, char const *pszKey);
+void HashMap_ElementMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData);
+void HashMap_DataMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData);
 void HashMapDestroy(PHASHMAP pHashMap);
 #endif

@@ -16,7 +16,7 @@
 #include "hashmap.h"
 
 size_t
-__HashMapHash(char const *pszKey) {
+__HashMap_Hash(char const *pszKey) {
 	size_t hash = 5381;
 	for(; *pszKey; pszKey++) {
 		hash = ((hash << 5) + hash) + *pszKey;
@@ -26,7 +26,7 @@ __HashMapHash(char const *pszKey) {
 }
 
 HASHMAP_STATUS
-HashMapInitialize(
+HashMap_Initialize(
 	PHASHMAP pHashMap,
 	size_t cInitialCapacity,
 	HASHMAP_FREE_ROUTINE pFreeFn,
@@ -47,8 +47,8 @@ HashMapInitialize(
 }
 
 HASHMAP_STATUS
-HashMapPut(PHASHMAP pHashMap, char const *pszKey, void *pValue) {
-	size_t hash = __HashMapHash(pszKey);
+HashMap_Put(PHASHMAP pHashMap, char const *pszKey, void *pValue) {
+	size_t hash = __HashMap_Hash(pszKey);
 	PHASHMAP_ELEMENT pElement = pHashMap->pElements \
 		+ (hash % pHashMap->cCapacity);
 
@@ -113,7 +113,7 @@ HashMapPut(PHASHMAP pHashMap, char const *pszKey, void *pValue) {
 }
 
 void
-HashMapDataMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData) {
+HashMap_DataMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData) {
 	for(size_t i = 0; i < pHashMap->cCapacity; i++) {
 		PHASHMAP_ELEMENT pElement = pHashMap->pElements + i; 
 		if(pElement->pData != NULL) {
@@ -127,7 +127,7 @@ HashMapDataMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData) 
 }
 
 void
-HashMapElementMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData) {
+HashMap_ElementMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData) {
 	for(size_t i = 0; i < pHashMap->cCapacity; i++) {
 		PHASHMAP_ELEMENT pElement = pHashMap->pElements + i; 
 		if(pElement->pData != NULL) {
@@ -161,13 +161,13 @@ void __HashMapDestroy_FreeFn(void *pData, void *pUserData) {
 
 void
 HashMapDestroy(PHASHMAP pHashMap) {
-	HashMapElementMapFn(pHashMap, __HashMapDestroy_FreeFn, pHashMap);
+	HashMap_ElementMapFn(pHashMap, __HashMapDestroy_FreeFn, pHashMap);
 	free(pHashMap->pElements);
 }
 
 void *
-HashMapGet(PHASHMAP pHashMap, char const *pszKey) {
-	size_t hash = __HashMapHash(pszKey);
+HashMap_Get(PHASHMAP pHashMap, char const *pszKey) {
+	size_t hash = __HashMap_Hash(pszKey);
 	PHASHMAP_ELEMENT pElement = \
 		pHashMap->pElements + (hash % pHashMap->cCapacity);
 	PHASHMAP_ELEMENT pCurrent = pElement;

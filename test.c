@@ -12,14 +12,14 @@
 #include "test.h"
 
 void
-TestSuiteInitialize(PTESTSUITE pTestSuite) {
+TestSuite_Initialize(PTESTSUITE pTestSuite) {
 	pTestSuite->pTestCases = NULL;
 	pTestSuite->pLastTestCase = NULL;
 	pTestSuite->cTests = 0;
 }
 
 void
-TestSuiteDestroy(PTESTSUITE pTestSuite) {
+TestSuite_Destroy(PTESTSUITE pTestSuite) {
 	for(PTESTCASE pCurrentTestCase = pTestSuite->pTestCases;
 		pCurrentTestCase;) {
 		
@@ -30,7 +30,7 @@ TestSuiteDestroy(PTESTSUITE pTestSuite) {
 }
 
 _Bool
-TestSuiteAddTestCase(
+TestSuite_AddTestCase(
 	PTESTSUITE pTestSuite,
 	char const *pszName,
 	TEST_ROUTINE pTestFn,
@@ -61,7 +61,7 @@ TestSuiteAddTestCase(
 }
 
 void
-TestSuiteRun(PTESTSUITE pTestSuite) {
+TestSuite_Run(PTESTSUITE pTestSuite) {
 	size_t cSuccess = 0;
 	size_t i = 1;
 	int iMaxWidth = 0;

@@ -35,15 +35,15 @@ struct tagTESTCASE {
 	PTESTCASE pNext;
 };
 
-void TestSuiteInitialize(PTESTSUITE pTestSuite);
-void TestSuiteDestroy(PTESTSUITE pTestSuite);
-_Bool TestSuiteAddTestCase(
+void TestSuite_Initialize(PTESTSUITE pTestSuite);
+void TestSuite_Destroy(PTESTSUITE pTestSuite);
+_Bool TestSuite_AddTestCase(
 	PTESTSUITE pTestSuite,
 	char const *pszName,
 	TEST_ROUTINE pTestFn,
 	void *pUserData
 );
 
-void TestSuiteRun(PTESTSUITE pTestSuite);
+void TestSuite_Run(PTESTSUITE pTestSuite);
 
 #endif
