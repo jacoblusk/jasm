@@ -3,34 +3,17 @@
 	#define _CRT_NONSTDC_NO_WARNINGS
 #endif
 
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
-#include <stdbool.h>
+#include <crtdbg.h>
+#else
+#include <stdlib.h>
+#endif
+
 #include <string.h>
 
-typedef enum tagHASHMAP_STATUS {
-	HASHMAP_STATUS_OK,
-	HASHMAP_STATUS_ENOMEM
-} HASHMAP_STATUS;
-
-typedef struct tagHASHMAP_ELEMENT HASHMAP_ELEMENT, *PHASHMAP_ELEMENT;
-
-struct tagHASHMAP_ELEMENT {
-	char const *pszKey;
-	void *pData;
-	PHASHMAP_ELEMENT pNext;
-};
-
-typedef void (*HASHMAP_MAP_ROUTINE)(PHASHMAP_ELEMENT, void *);
-typedef HASHMAP_MAP_ROUTINE HASHMAP_FREE_ROUTINE; 
-
-typedef struct tagHASHMAP {
-	size_t cCapacity;
-	size_t cSize;
-	PHASHMAP_ELEMENT pElements;
-	HASHMAP_FREE_ROUTINE pFreeFn;
-	void *pFreeFnUserData;
-} HASHMAP, *PHASHMAP;
-
+#include "hashmap.h"
 
 size_t
 __HashMapHash(char const *pszKey) {
@@ -54,8 +37,10 @@ HashMapInitialize(
 	pHashMap->pFreeFn = pFreeFn;
 	pHashMap->pFreeFnUserData = pFreeFnUserData;
 	pHashMap->pElements = malloc(
-		sizeof(HASHMAP_ELEMENT) * pHashMap->cCapacity
+		sizeof(HASHMAP_ELEMENT) * cInitialCapacity
 	);
+
+	memset(pHashMap->pElements, 0, sizeof(HASHMAP_ELEMENT) * cInitialCapacity);
 
 	return (pHashMap->pElements != NULL) \
 		? HASHMAP_STATUS_OK : HASHMAP_STATUS_ENOMEM;
@@ -78,14 +63,14 @@ HashMapPut(PHASHMAP pHashMap, char const *pszKey, void *pValue) {
 	} else {
 		if(strcmp(pszKey, pElement->pszKey) == 0) {
 			if(pHashMap->pFreeFn) {
-				pHashMap->pFreeFn(pElement, pHashMap->pFreeFnUserData);
+				pHashMap->pFreeFn(pElement->pData, pHashMap->pFreeFnUserData);
 			}
 
 			pElement->pData = pValue;
 			return HASHMAP_STATUS_OK;
 		}
 
-		bool bMatch = false;
+		_Bool bMatch = 0;
 		PHASHMAP_ELEMENT pCurrent = pElement;
 
 		for(;
@@ -111,6 +96,7 @@ HashMapPut(PHASHMAP pHashMap, char const *pszKey, void *pValue) {
 		}
 
 		pNewElement->pszKey = strdup(pszKey);
+		pNewElement->pNext = NULL;
 		if(!pNewElement->pszKey) {
 			free(pNewElement);
 			return HASHMAP_STATUS_ENOMEM;
@@ -126,6 +112,59 @@ HashMapPut(PHASHMAP pHashMap, char const *pszKey, void *pValue) {
 	return HASHMAP_STATUS_OK;
 }
 
+void
+HashMapDataMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData) {
+	for(size_t i = 0; i < pHashMap->cCapacity; i++) {
+		PHASHMAP_ELEMENT pElement = pHashMap->pElements + i; 
+		if(pElement->pData != NULL) {
+			for(PHASHMAP_ELEMENT pCurrent = pElement;
+				pCurrent;
+				pCurrent = pCurrent->pNext) {
+				MapFn(pCurrent->pData, pUserData);
+			}
+		}
+	}
+}
+
+void
+HashMapElementMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData) {
+	for(size_t i = 0; i < pHashMap->cCapacity; i++) {
+		PHASHMAP_ELEMENT pElement = pHashMap->pElements + i; 
+		if(pElement->pData != NULL) {
+			for(PHASHMAP_ELEMENT pCurrent = pElement;
+				pCurrent;) {
+
+				PHASHMAP_ELEMENT pTemp = pCurrent->pNext;
+				MapFn(pCurrent, pUserData);
+				pCurrent = pTemp;
+			}
+		}
+	}
+}
+
+void __HashMapDestroy_FreeFn(void *pData, void *pUserData) {
+	PHASHMAP_ELEMENT pElement = pData;
+	PHASHMAP pHashMap = pUserData;
+
+	if(pHashMap->pFreeFn)
+		pHashMap->pFreeFn(pElement->pData, pHashMap->pFreeFnUserData);
+	
+	free(pElement->pszKey);
+
+	for(size_t i = 0; i < pHashMap->cCapacity; i++) {
+		if(&pHashMap->pElements[i] == pElement)
+			return;
+	}
+
+	free(pElement);
+}
+
+void
+HashMapDestroy(PHASHMAP pHashMap) {
+	HashMapElementMapFn(pHashMap, __HashMapDestroy_FreeFn, pHashMap);
+	free(pHashMap->pElements);
+}
+
 void *
 HashMapGet(PHASHMAP pHashMap, char const *pszKey) {
 	size_t hash = __HashMapHash(pszKey);
@@ -134,12 +173,12 @@ HashMapGet(PHASHMAP pHashMap, char const *pszKey) {
 	PHASHMAP_ELEMENT pCurrent = pElement;
 
 	for(;
-		pCurrent && (bMatch = strcmp(pCurrent->pszKey, pszKey) != 0);
+		pCurrent && (strcmp(pCurrent->pszKey, pszKey) != 0);
 		pCurrent = pCurrent->pNext
 	);
 
 	if(pCurrent) {
-		return pElement->pData;
+		return pCurrent->pData;
 	}
 
 	return NULL;
