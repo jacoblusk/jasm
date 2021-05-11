@@ -9,7 +9,7 @@ typedef enum tagHASHMAP_STATUS {
 typedef struct tagHASHMAP_ELEMENT HASHMAP_ELEMENT, *PHASHMAP_ELEMENT;
 
 struct tagHASHMAP_ELEMENT {
-	char const *pszKey;
+	char *pszKey;
 	void *pData;
 	PHASHMAP_ELEMENT pNext;
 };
@@ -38,5 +38,5 @@ HASHMAP_STATUS HashMap_Put(PHASHMAP pHashMap, char const *pszKey, void *pValue);
 void *HashMap_Get(PHASHMAP pHashMap, char const *pszKey);
 void HashMap_ElementMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData);
 void HashMap_DataMapFn(PHASHMAP pHashMap, HASHMAP_MAP_ROUTINE MapFn, void *pUserData);
-void HashMapDestroy(PHASHMAP pHashMap);
+void HashMap_Destroy(PHASHMAP pHashMap);
 #endif
