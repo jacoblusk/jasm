@@ -53,7 +53,7 @@ HashMap_Put(PHASHMAP pHashMap, char const *pszKey, void *pValue) {
 		+ (hash % pHashMap->cCapacity);
 
 	if(!pElement->pData) {
-		char const *pszKeyCopy = strdup(pszKey);
+		char *pszKeyCopy = strdup(pszKey);
 		if(!pszKeyCopy) {
 			return HASHMAP_STATUS_ENOMEM;			
 		}
@@ -160,7 +160,7 @@ void __HashMapDestroy_FreeFn(void *pData, void *pUserData) {
 }
 
 void
-HashMapDestroy(PHASHMAP pHashMap) {
+HashMap_Destroy(PHASHMAP pHashMap) {
 	HashMap_ElementMapFn(pHashMap, __HashMapDestroy_FreeFn, pHashMap);
 	free(pHashMap->pElements);
 }
@@ -171,6 +171,9 @@ HashMap_Get(PHASHMAP pHashMap, char const *pszKey) {
 	PHASHMAP_ELEMENT pElement = \
 		pHashMap->pElements + (hash % pHashMap->cCapacity);
 	PHASHMAP_ELEMENT pCurrent = pElement;
+
+	if(!pCurrent->pszKey)
+		return NULL;
 
 	for(;
 		pCurrent && (strcmp(pCurrent->pszKey, pszKey) != 0);

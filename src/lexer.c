@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #endif
 
+#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -25,18 +27,32 @@ PTOKEN CreateToken(TOKEN_TYPE tokenType, UTOKEN_VALUE tokenValue) {
 	return pToken;
 }
 
-void LexerInitialize(PLEXER pLexer, char const *pszBuffer,
+void Lexer_Initialize(PLEXER pLexer, char const *pszBuffer,
 					 size_t cbBufferSize) {
 	pLexer->pszBuffer = pszBuffer;
 	pLexer->cbBufferSize = cbBufferSize;
 	pLexer->cbPosition = 0;
+
+	HashMap_Initialize(&pLexer->hmCharacterMap, 10, NULL, NULL);
+
+	HashMap_Put(&pLexer->hmCharacterMap, ",", (void *)TOKEN_TYPE_COMMA);
+	HashMap_Put(&pLexer->hmCharacterMap, "[", (void *)TOKEN_TYPE_LBRACKET);
+	HashMap_Put(&pLexer->hmCharacterMap, "]", (void *)TOKEN_TYPE_RBRACKET);
+	HashMap_Put(&pLexer->hmCharacterMap, "*", (void *)TOKEN_TYPE_ASTERISK);
+	HashMap_Put(&pLexer->hmCharacterMap, "+", (void *)TOKEN_TYPE_PLUS);
+	HashMap_Put(&pLexer->hmCharacterMap, "-", (void *)TOKEN_TYPE_MINUS);
+	HashMap_Put(&pLexer->hmCharacterMap, "/", (void *)TOKEN_TYPE_FORWARD_SLASH);
 }
 
-void LexerAdvance(PLEXER pLexer, size_t cBytes) {
+void Lexer_Advance(PLEXER pLexer, size_t cBytes) {
 	pLexer->cbPosition += cBytes;
 }
 
-void TokenPrepend(PPTOKEN ppToken, PTOKEN pToken) {
+void Lexer_Destroy(PLEXER pLexer) {
+	HashMap_Destroy(&pLexer->hmCharacterMap);
+}
+
+void Token_Prepend(PPTOKEN ppToken, PTOKEN pToken) {
 	if(!*ppToken) {
 		pToken->pNext = NULL;
 		*ppToken = pToken;
@@ -47,20 +63,37 @@ void TokenPrepend(PPTOKEN ppToken, PTOKEN pToken) {
 	*ppToken = pToken;
 }
 
-void TokenReverse(PPTOKEN ppToken) {
+void Token_Reverse(PPTOKEN ppToken) {
 	PTOKEN pReversed = NULL;
 
 	for(PTOKEN pCurrent = *ppToken; pCurrent;) {
 		PTOKEN pTemp = pCurrent->pNext;
-		TokenPrepend(&pReversed, pCurrent);
+		Token_Prepend(&pReversed, pCurrent);
 		pCurrent = pTemp;
 	}
 
 	*ppToken = pReversed;
 }
 
-typedef void (*TOKEN_MAP_FN_ROUTINE)(PTOKEN, void *);
-void TokenMapFn(PTOKEN pToken, TOKEN_MAP_FN_ROUTINE pMapFn,
+void __Token_Destroy_DestroyToken(PTOKEN pToken, void *pUserData) {
+	UNUSED(pUserData);
+
+	switch(pToken->tokenType) {
+		case TOKEN_TYPE_IDENTIFIER:
+			free((char *)pToken->tokenValue.pszString);
+			break;
+		default:
+			break;
+	}
+
+	free(pToken);
+}
+
+void Token_Destroy(PTOKEN pToken) {
+	Token_MapFn(pToken, __Token_Destroy_DestroyToken, NULL);
+}
+
+void Token_MapFn(PTOKEN pToken, TOKEN_MAP_FN_ROUTINE pMapFn,
 		void *pUserData) {
 	for(PTOKEN pCurrent = pToken; pCurrent; ) {
 		PTOKEN pTemp = pCurrent->pNext;
@@ -69,7 +102,7 @@ void TokenMapFn(PTOKEN pToken, TOKEN_MAP_FN_ROUTINE pMapFn,
 	}
 }
 
-PTOKEN LexerIdentifier(PLEXER pLexer) {
+PTOKEN Lexer_Identifier(PLEXER pLexer) {
 	size_t cLexemeLength = 0;
 	char c;
 
@@ -95,11 +128,11 @@ PTOKEN LexerIdentifier(PLEXER pLexer) {
 		(UTOKEN_VALUE) { .pszString = pszLexeme }
 	);
 
-	LexerAdvance(pLexer, cLexemeLength);
+	Lexer_Advance(pLexer, cLexemeLength);
 	return pToken;
 }
 
-PTOKEN LexerNumber(PLEXER pLexer) {
+PTOKEN Lexer_Number(PLEXER pLexer) {
 	size_t cLexemeLength = 0;
 	char c;
 
@@ -128,35 +161,44 @@ PTOKEN LexerNumber(PLEXER pLexer) {
 		(UTOKEN_VALUE) { .iInteger = iResult }
 	);
 
-	LexerAdvance(pLexer, cLexemeLength);
+	Lexer_Advance(pLexer, cLexemeLength);
 	return pToken;
 }
 
-PTOKEN LexerRun(PLEXER pLexer) {
+PTOKEN Lexer_Run(PLEXER pLexer) {
 	PTOKEN pTokens = NULL;
 
 	do {
+		char pszC[4];
 		char c = pLexer->pszBuffer[pLexer->cbPosition];
-		if(c == ',') {
+		sprintf(pszC, "%c", c);
+
+		TOKEN_TYPE tokenType = (uintptr_t)HashMap_Get(
+			&pLexer->hmCharacterMap,
+			pszC
+		);
+
+		if(tokenType) {
 			PTOKEN pToken = CreateToken(
-				TOKEN_TYPE_COMMA,
+				tokenType,
 				(UTOKEN_VALUE) { .cCharacter = c }
 			);
 
-			TokenPrepend(&pTokens, pToken);
-			LexerAdvance(pLexer, 1);
+			Token_Prepend(&pTokens, pToken);
+			Lexer_Advance(pLexer, 1);
 		}
 		else if(isspace(c)) {
-			LexerAdvance(pLexer, 1);
+			Lexer_Advance(pLexer, 1);
 		} else if(isalpha(c)) {
-			PTOKEN pToken = LexerIdentifier(pLexer);
-			TokenPrepend(&pTokens, pToken);
+			PTOKEN pToken = Lexer_Identifier(pLexer);
+			Token_Prepend(&pTokens, pToken);
 		} else if(isdigit(c)) {
-			PTOKEN pToken = LexerNumber(pLexer);
-			TokenPrepend(&pTokens, pToken);
+			PTOKEN pToken = Lexer_Number(pLexer);
+			Token_Prepend(&pTokens, pToken);
 		}
 	} while(pLexer->cbPosition < pLexer->cbBufferSize);
 
+	Token_Reverse(&pTokens);
 	return pTokens;
 }
 

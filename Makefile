@@ -33,7 +33,7 @@ tests/obj:
 test: clean set_debug obj tests/bin tests/obj tests/bin/hashmap_test.exe
 	tests/bin/hashmap_test.exe
 
-bin/main.exe: obj/main.o obj/lexer.o
+bin/main.exe: obj/main.o obj/lexer.o obj/hashmap.o
 	$(LINK) $(LINK_FLAGS) /out:$@ $^
 
 obj/main.o: src/main.c includes/lexer.h

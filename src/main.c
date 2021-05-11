@@ -11,14 +11,18 @@
 
 #include "lexer.h"
 
-#define UNUSED(X) ((void)X)
-
 void PrintToken(PTOKEN pToken, void *pUserData) {
 	UNUSED(pUserData);
 
 	switch(pToken->tokenType) {
 		case TOKEN_TYPE_COMMA:
-			printf("comma: %c\n", pToken->tokenValue.cCharacter);
+		case TOKEN_TYPE_LBRACKET:
+		case TOKEN_TYPE_RBRACKET:
+		case TOKEN_TYPE_ASTERISK:
+		case TOKEN_TYPE_PLUS:
+		case TOKEN_TYPE_MINUS:
+		case TOKEN_TYPE_FORWARD_SLASH:
+			printf("syntax: %c\n", pToken->tokenValue.cCharacter);
 			break;
 		case TOKEN_TYPE_IDENTIFIER:
 			printf("identifier: %s\n", pToken->tokenValue.pszString);
@@ -31,32 +35,19 @@ void PrintToken(PTOKEN pToken, void *pUserData) {
 	}
 }
 
-void DestroyTokens(PTOKEN pToken, void *pUserData) {
-	UNUSED(pUserData);
-
-	switch(pToken->tokenType) {
-		case TOKEN_TYPE_IDENTIFIER:
-			free((char *)pToken->tokenValue.pszString);
-			break;
-		default:
-			break;
-	}
-
-	free(pToken);
-}
-
 int main(int argc, char **argv) {
 	UNUSED(argc), UNUSED(argv);
 
 	LEXER lexer;
-	char const *pszBuffer = "imul rax, 2";
+	char const *pszBuffer = "imul [rax], 2 * 4 + 1 - 4 / 2";
 
-	LexerInitialize(&lexer, pszBuffer, strlen(pszBuffer));
-	PTOKEN pTokens = LexerRun(&lexer);
-	TokenReverse(&pTokens);
-	TokenMapFn(pTokens, PrintToken, NULL);
-
-	TokenMapFn(pTokens, DestroyTokens, NULL);
+	Lexer_Initialize(&lexer, pszBuffer, strlen(pszBuffer));
+	{
+		PTOKEN pTokens = Lexer_Run(&lexer);
+		Token_MapFn(pTokens, PrintToken, NULL);
+		Token_Destroy(pTokens);
+	}
+	Lexer_Destroy(&lexer);
 
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();
