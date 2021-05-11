@@ -1,41 +1,60 @@
+DEBUG_SETTINGS = /MDd -D_DEBUG
+
 ifndef DEBUG
-DEBUG_FLAG :=
+DEBUG_FLAG = 
 else
-DEBUG_FLAG = /MDd -D_DEBUG
+DEBUG_FLAG = $(DEBUG_SETTINGS)
 endif
 
-C_FLAGS := /W4 /Z7 $(DEBUG_FLAG)
+C_FLAGS := /W4 /Z7 $(DEBUG_FLAG) /Iincludes
 LINK_FLAGS := /DEBUG /subsystem:console
 CC := clang-cl
 LINK := lld-link
 
-all: main.exe
+all: bin obj bin/main.exe
 
-test: hashmap_test.exe
-	hashmap_test.exe
+debug: clean set_debug all
 
-main.exe: main.o lexer.o
+set_debug:
+	$(eval DEBUG_FLAG = $(DEBUG_SETTINGS))
+
+bin:
+	mkdir bin
+
+obj:
+	mkdir obj
+
+tests/bin:
+	mkdir tests/bin
+
+tests/obj:
+	mkdir tests/obj
+
+test: clean set_debug obj tests/bin tests/obj tests/bin/hashmap_test.exe
+	tests/bin/hashmap_test.exe
+
+bin/main.exe: obj/main.o obj/lexer.o
 	$(LINK) $(LINK_FLAGS) /out:$@ $^
 
-main.o: main.c lexer.h
+obj/main.o: src/main.c includes/lexer.h
 	$(CC) $< /c /o $@ $(C_FLAGS)
 
-lexer.o: lexer.c lexer.h
+obj/lexer.o: src/lexer.c includes/lexer.h
 	$(CC) $< /c /o $@ $(C_FLAGS)
 
-hashmap.o: hashmap.c hashmap.h
+obj/hashmap.o: src/hashmap.c includes/hashmap.h
 	$(CC) $< /c /o $@ $(C_FLAGS)
 
-hashmap_test.o: hashmap_test.c hashmap.c hashmap.h
+tests/obj/hashmap_test.o: tests/hashmap_test.c src/hashmap.c includes/hashmap.h
 	$(CC) $< /c /o $@ $(C_FLAGS)
 
-hashmap_test.exe: hashmap_test.o hashmap.o test.o
+tests/bin/hashmap_test.exe: tests/obj/hashmap_test.o obj/hashmap.o tests/obj/test.o
 	$(LINK) $(LINK_FLAGS) /out:$@ $^
 
-test.o: test.c test.h
+tests/obj/test.o: src/test.c includes/test.h
 	$(CC) $< /c /o $@ $(C_FLAGS)
 
 clean:
-	rm -rf *.o *.exe *.exp *.lib *.pdb
+	rm -rf obj bin tests/obj tests/bin tests/bin
 
-.PHONY: all clean
+.PHONY: all clean tests set_debug
