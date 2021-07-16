@@ -1,233 +1,287 @@
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
 #include <crtdbg.h>
+#include <stdlib.h>
 #else
 #include <stdlib.h>
 #endif
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 
 #include "hashmap.h"
 #include "test.h"
+#include "utility.h"
 
 _Bool Test_SinglePutGet(void *pUserData) {
-	HASHMAP hashMap;
-	HASHMAP_STATUS hmStatus;
+    UNUSED(pUserData);
 
-	hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
+    HASHMAP hashMap;
+    HASHMAP_STATUS hmStatus;
 
-	hmStatus = HashMap_Put(&hashMap, "foo", "bar");
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put failed.");
+    hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
 
-	char *pszResult = HashMap_Get(&hashMap, "foo");
-	TEST_ASSERT(strcmp(pszResult, "bar") == 0, "HashMap_Get failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo", "bar");
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put failed.");
 
-	HashMapDestroy(&hashMap);
-	return TRUE;
+    void *pszResult;
+
+    hmStatus = HashMap_Get(&hashMap, "foo", &pszResult);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Get failed.");
+    TEST_ASSERT(strcmp((char *)pszResult, "bar") == 0,
+                "HashMap_Get wrong value.");
+
+    HashMap_Destroy(&hashMap);
+    return TRUE;
 }
 
 _Bool Test_MultiplePutGet(void *pUserData) {
-	HASHMAP hashMap;
-	HASHMAP_STATUS hmStatus;
+    UNUSED(pUserData);
 
-	hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
+    HASHMAP hashMap;
+    HASHMAP_STATUS hmStatus;
 
-	hmStatus = HashMap_Put(&hashMap, "foo1", "bar1");
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
+    hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
 
-	hmStatus = HashMap_Put(&hashMap, "foo2", "bar2");
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo1", "bar1");
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
 
-	hmStatus = HashMap_Put(&hashMap, "foo3", "bar3");
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put3 failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo2", "bar2");
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
 
-	char *pszResult;
+    hmStatus = HashMap_Put(&hashMap, "foo3", "bar3");
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put3 failed.");
 
-	pszResult = HashMap_Get(&hashMap, "foo1");
-	TEST_ASSERT(strcmp(pszResult, "bar1") == 0, "HashMap_Get1 failed.");
+    void *pszResult;
 
-	pszResult = HashMap_Get(&hashMap, "foo2");
-	TEST_ASSERT(strcmp(pszResult, "bar2") == 0, "HashMap_Get2 failed.");
+    hmStatus = HashMap_Get(&hashMap, "foo1", &pszResult);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Get1 failed.");
+    TEST_ASSERT(strcmp(pszResult, "bar1") == 0, "HashMap_Get1 failed.");
 
-	pszResult = HashMap_Get(&hashMap, "foo3");
-	TEST_ASSERT(strcmp(pszResult, "bar3") == 0, "HashMap_Get3 failed.");
+    hmStatus = HashMap_Get(&hashMap, "foo2", &pszResult);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Get2 failed.");
+    TEST_ASSERT(strcmp(pszResult, "bar2") == 0, "HashMap_Get2 failed.");
 
-	HashMapDestroy(&hashMap);
-	return TRUE;
+    hmStatus = HashMap_Get(&hashMap, "foo3", &pszResult);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Get2 failed.");
+    TEST_ASSERT(strcmp(pszResult, "bar3") == 0, "HashMap_Get3 failed.");
+
+    HashMap_Destroy(&hashMap);
+    return TRUE;
 }
 
 _Bool Test_OverwriteKey(void *pUserData) {
+    UNUSED(pUserData);
 
-	HASHMAP hashMap;
-	HASHMAP_STATUS hmStatus;
+    HASHMAP hashMap;
+    HASHMAP_STATUS hmStatus;
 
-	hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
+    hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
 
-	hmStatus = HashMap_Put(&hashMap, "foo", "bar");
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo", "bar");
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
 
-	hmStatus = HashMap_Put(&hashMap, "foo", "bar1");
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo", "bar1");
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
 
-	char *pszResult = HashMap_Get(&hashMap, "foo");
-	TEST_ASSERT(strcmp(pszResult, "bar1") == 0, "HashMap_Get failed.");
+    void *pszResult;
 
-	HashMapDestroy(&hashMap);
-	return TRUE;
+    hmStatus = HashMap_Get(&hashMap, "foo", &pszResult);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Get failed.");
+    TEST_ASSERT(strcmp(pszResult, "bar1") == 0, "HashMap_Get failed.");
+
+    HashMap_Destroy(&hashMap);
+    return TRUE;
 }
 
 void __Test_FreeFunction_Fn(void *pData, void *pUserData) {
-	int *i = pData;
-	*i = 0;
+    UNUSED(pUserData);
+
+    int *i = pData;
+    *i = 0;
 }
 
 _Bool Test_FreeFunction(void *pUserData) {
+    UNUSED(pUserData);
 
-	HASHMAP hashMap;
-	HASHMAP_STATUS hmStatus;
+    HASHMAP hashMap;
+    HASHMAP_STATUS hmStatus;
 
-	hmStatus = HashMap_Initialize(&hashMap, 10, __Test_FreeFunction_Fn, NULL);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
+    hmStatus = HashMap_Initialize(&hashMap, 10, __Test_FreeFunction_Fn, NULL);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
 
-	int iTest1 = 1;
-	int iTest2 = 2;
+    int iTest1 = 1;
+    int iTest2 = 2;
 
-	hmStatus = HashMap_Put(&hashMap, "foo", &iTest1);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo", &iTest1);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
 
-	hmStatus = HashMap_Put(&hashMap, "foo", &iTest2);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo", &iTest2);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
 
-	int *iResult = HashMap_Get(&hashMap, "foo");
-	TEST_ASSERT(iResult == &iTest2, "HashMap_Get failed.");
+    void *piResult;
 
-	TEST_ASSERT(iTest1 == 0, "Free function not called.");
+    hmStatus = HashMap_Get(&hashMap, "foo", &piResult);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Get failed.");
+    TEST_ASSERT(piResult == &iTest2, "HashMap_Get failed.");
 
-	HashMapDestroy(&hashMap);
-	return TRUE;
+    TEST_ASSERT(iTest1 == 0, "Free function not called.");
+
+    HashMap_Destroy(&hashMap);
+    return TRUE;
 }
 
 void __Test_UserData_FreeFn(void *pData, void *pUserData) {
-	*(int *)pUserData = 2;
+    UNUSED(pData);
+
+    *(int *)pUserData = 2;
 }
 
 _Bool Test_UserData_FreeFn(void *pUserData) {
 
-	HASHMAP hashMap;
-	HASHMAP_STATUS hmStatus;
+    HASHMAP hashMap;
+    HASHMAP_STATUS hmStatus;
 
-	int iUserData = 1;
-	int iTest1 = 1;
-	int iTest2 = 2;
-	
-	hmStatus = HashMap_Initialize(&hashMap, 10, __Test_UserData_FreeFn, &iUserData);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
+    int iUserData = 1;
+    int iTest1 = 1;
+    int iTest2 = 2;
 
-	hmStatus = HashMap_Put(&hashMap, "foo", &iTest1);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
+    hmStatus =
+        HashMap_Initialize(&hashMap, 10, __Test_UserData_FreeFn, &iUserData);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
 
-	hmStatus = HashMap_Put(&hashMap, "foo", &iTest2);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo", &iTest1);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put1 failed.");
 
-	int *iResult = HashMap_Get(&hashMap, "foo");
-	TEST_ASSERT(iResult == &iTest2, "HashMap_Get failed.");
+    hmStatus = HashMap_Put(&hashMap, "foo", &iTest2);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put2 failed.");
 
-	TEST_ASSERT(iUserData == 2, "User data not passed to FreeFn.");
+    void *piResult;
 
-	HashMapDestroy(&hashMap);
-	return TRUE;
+    hmStatus = HashMap_Get(&hashMap, "foo", &piResult);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Get failed.");
+    TEST_ASSERT(piResult == &iTest2, "HashMap_Get failed.");
+
+    TEST_ASSERT(iUserData == 2, "User data not passed to FreeFn.");
+
+    HashMap_Destroy(&hashMap);
+    return TRUE;
 }
 
-int __Test_DataMapFn_PartialSum(int n) {
-	return n * (n + 1) / 2;
-}
+int __Test_DataMapFn_PartialSum(int n) { return n * (n + 1) / 2; }
 
 void __Test_DataMapFn_Sum(void *pData, void *pUserData) {
-	int *piSum = pUserData;
+    int *piSum = pUserData;
 
-	*piSum += (uintptr_t)pData;
+    *piSum += *(int *)pData;
 }
 
 _Bool Test_DataMapFn(void *pUserData) {
-	HASHMAP hashMap;
-	HASHMAP_STATUS hmStatus;
+    UNUSED(pUserData);
 
-	uintptr_t iMaxVal = 20;
-	
-	hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
+    HASHMAP hashMap;
+    HASHMAP_STATUS hmStatus;
 
-	for(intptr_t i = 1; i <= iMaxVal; i++) {
-		char pszKey[20];
+    int iMaxVal = 20;
 
-		sprintf(pszKey, "foo%lld", i);
-		hmStatus = HashMap_Put(&hashMap, pszKey, (void *)i);
-		TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put failed (%lld).", i);
-	}
+    hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
 
-	int iSum = 0;
-	HashMap_DataMapFn(&hashMap, __Test_DataMapFn_Sum, &iSum);
-	int iExpectedSum = __Test_DataMapFn_PartialSum(iMaxVal);
+    int *pValues = malloc(sizeof(int) * iMaxVal);
+    TEST_ASSERT(pValues != NULL, "malloc failed");
 
-	TEST_ASSERT(iSum == iExpectedSum, "HashMap_DataMapFn failed. (%d != %d)", iSum, iExpectedSum);
+    for (int i = 0; i < iMaxVal; i++) {
+        char pszKey[20];
 
-	HashMapDestroy(&hashMap);
-	return TRUE;
+        sprintf(pszKey, "foo%d", i);
+        pValues[i] = i;
+        hmStatus = HashMap_Put(&hashMap, pszKey, &pValues[i]);
+        TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put failed (%d).",
+                    i);
+    }
+
+    int iSum = 0;
+    HashMap_DataMapFn(&hashMap, __Test_DataMapFn_Sum, &iSum);
+    int iExpectedSum = __Test_DataMapFn_PartialSum(iMaxVal - 1);
+
+    TEST_ASSERT(iSum == iExpectedSum, "HashMap_DataMapFn failed. (%d != %d)",
+                iSum, iExpectedSum);
+
+    HashMap_Destroy(&hashMap);
+    free(pValues);
+    return TRUE;
 }
 
 _Bool Test_ManyPutGet(void *pUserData) {
+    UNUSED(pUserData);
 
-	HASHMAP hashMap;
-	HASHMAP_STATUS hmStatus;
-	
-	hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
-	TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
+    HASHMAP hashMap;
+    HASHMAP_STATUS hmStatus;
 
-	for(intptr_t i = 1; i < 20; i++) {
-		char pszKey[20];
+    hmStatus = HashMap_Initialize(&hashMap, 10, NULL, NULL);
+    TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Initialize failed.");
 
-		sprintf(pszKey, "foo%lld", i);
-		hmStatus = HashMap_Put(&hashMap, pszKey, (void *)i);
-		TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put failed (%lld).", i);
-	}
+    int iMaxVal = 20;
+    int *pValues = malloc(sizeof(int) * iMaxVal);
+    TEST_ASSERT(pValues != NULL, "malloc failed");
 
-	for(intptr_t i = 1; i < 20; i++) {
-		char pszKey[20] = { 0 };
+    for (int i = 0; i < iMaxVal; i++) {
+        char pszKey[20];
 
-		sprintf(pszKey, "foo%lld", i);
-		uintptr_t iValue = (uintptr_t)HashMap_Get(&hashMap, pszKey);
-		TEST_ASSERT(iValue == i, "HashMap_Get failed ((iValue)%lld != (i)%lld).", iValue, i);
-	}
+        sprintf(pszKey, "foo%d", i);
+        pValues[i] = i;
+        hmStatus = HashMap_Put(&hashMap, pszKey, &pValues[i]);
+        TEST_ASSERT(hmStatus == HASHMAP_STATUS_OK, "HashMap_Put failed (%d).",
+                    i);
+    }
 
-	HashMapDestroy(&hashMap);
-	return TRUE;
+    for (intptr_t i = 0; i < iMaxVal; i++) {
+        char pszKey[20] = {0};
+
+        sprintf(pszKey, "foo%lld", i);
+        void *piValue;
+
+        hmStatus = HashMap_Get(&hashMap, pszKey, &piValue);
+        TEST_ASSERT(*(int *)piValue == i,
+                    "HashMap_Get failed ((iValue)%lld != (i)%lld).",
+                    *(int *)piValue, i);
+    }
+
+    HashMap_Destroy(&hashMap);
+    free(pValues);
+    return TRUE;
 }
 
 int main(int argc, char **argv) {
-	TESTSUITE testSuite;
+    TESTSUITE testSuite;
 
-	TestSuite_Initialize(&testSuite);
-	{
-		TestSuite_AddTestCase(&testSuite, "HashMap Put/Get", Test_SinglePutGet, NULL); 
-		TestSuite_AddTestCase(&testSuite, "HashMap Multiple Put/Get", Test_MultiplePutGet, NULL); 
-		TestSuite_AddTestCase(&testSuite, "HashMap Overwrite", Test_OverwriteKey, NULL); 
-		TestSuite_AddTestCase(&testSuite, "HashMap Free Function", Test_FreeFunction, NULL); 
-		TestSuite_AddTestCase(&testSuite, "HashMap Free Function (User Data)", Test_UserData_FreeFn, NULL); 
-		TestSuite_AddTestCase(&testSuite, "HashMap N > Capacity Put/Get", Test_ManyPutGet, NULL); 
-		TestSuite_AddTestCase(&testSuite, "HashMap Map Data Function", Test_DataMapFn, NULL); 
-	}
+    TestSuite_Initialize(&testSuite);
+    {
+        TestSuite_AddTestCase(&testSuite, "HashMap Put/Get", Test_SinglePutGet,
+                              NULL);
+        TestSuite_AddTestCase(&testSuite, "HashMap Multiple Put/Get",
+                              Test_MultiplePutGet, NULL);
+        TestSuite_AddTestCase(&testSuite, "HashMap Overwrite",
+                              Test_OverwriteKey, NULL);
+        TestSuite_AddTestCase(&testSuite, "HashMap Free Function",
+                              Test_FreeFunction, NULL);
+        TestSuite_AddTestCase(&testSuite, "HashMap Free Function (User Data)",
+                              Test_UserData_FreeFn, NULL);
+        TestSuite_AddTestCase(&testSuite, "HashMap N > Capacity Put/Get",
+                              Test_ManyPutGet, NULL);
+        TestSuite_AddTestCase(&testSuite, "HashMap Map Data Function",
+                              Test_DataMapFn, NULL);
+    }
 
-	TestSuite_Run(&testSuite);
-	TestSuite_Destroy(&testSuite);
+    TestSuite_Run(&testSuite);
+    TestSuite_Destroy(&testSuite);
 
-	if(_CrtDumpMemoryLeaks()) {
-		printf("Memory leak found, check DbgView64 for more information.\n");
-	}
-	return 0;
+    if (_CrtDumpMemoryLeaks()) {
+        printf("Memory leak found, check DbgView64 for more information.\n");
+    }
+    return 0;
 }
